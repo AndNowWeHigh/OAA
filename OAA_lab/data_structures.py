@@ -30,7 +30,7 @@ class InvertedIndex:
             return "\n".join(self.documents)
 
         query = query.lower().strip()
-        print(query)
+
         # Точний пошук за ключовим словом
         if query.startswith('"') and query.endswith('"'):
             keyword = query.strip('"')
@@ -41,17 +41,23 @@ class InvertedIndex:
 
         # Префіксний пошук
         if query.endswith("*"):
-            print('1')
-            prefix = query[:-1]
+            prefix = query[:-1] #"de" * ==> "de"_
+            prefix = prefix.rstrip()[1:-2]
+
             matching_words = [word for word in self.index if word.startswith(prefix)]
             matching_docs = set()
+
             for word in matching_words:
                 matching_docs.update(self.index[word].keys())
             return "\n".join(
                 self.documents[doc_id] for doc_id in matching_docs) if matching_docs else "No matching documents found."
 
         # Пошук на відстані <N>
-        match = re.match(r'"(.+)"\s+<(\d+)>\s+"(.+)"', query)
+        # print(repr(query))
+        query = query.strip()
+
+        match = re.search(r'"(.+)"\s*<(\d+)>\s*"(.+)"', query) #\s* - нуль або більше пробілів
+        # print(match)
         if match:
             word1, distance, word2 = match.groups()
             distance = int(distance)
@@ -63,7 +69,7 @@ class InvertedIndex:
                     positions1 = self.index[word1][doc_id]
                     positions2 = self.index[word2][doc_id]
                     for p1 in positions1:
-                        if any(abs(p1 - p2) <= distance for p2 in positions2):
+                        if any(abs(p1 - p2) == distance for p2 in positions2):
                             result_docs.append(doc_id)
                             break
                 return "\n".join(
